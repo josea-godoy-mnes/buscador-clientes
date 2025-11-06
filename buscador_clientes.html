@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Buscador de Clientes</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #f9fafb;
+    }
+    .container {
+      max-width: 1100px;
+    }
+    input {
+      border-radius: 10px;
+    }
+    table {
+      border-radius: 10px;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body class="p-6">
+  <div class="container mx-auto">
+    <h1 class="text-3xl font-bold text-center mb-6 text-blue-700">📋 Buscador de Clientes</h1>
+
+    <input id="searchInput" type="text" placeholder="Buscar por esquema, cliente, código, categoría, supervisor, vendedor o ruta..."
+      class="w-full p-3 border border-gray-300 mb-4 shadow-sm focus:ring focus:ring-blue-300">
+
+    <div class="overflow-x-auto bg-white shadow-md rounded-lg">
+      <table id="clientesTable" class="min-w-full">
+        <thead class="bg-blue-600 text-white">
+          <tr>
+            <th class="py-2 px-4 text-left">Esquema</th>
+            <th class="py-2 px-4 text-left">Cod. Cliente</th>
+            <th class="py-2 px-4 text-left">Cliente</th>
+            <th class="py-2 px-4 text-left">Categoría</th>
+            <th class="py-2 px-4 text-left">Supervisor</th>
+            <th class="py-2 px-4 text-left">Vendedor</th>
+            <th class="py-2 px-4 text-left">Ruta</th>
+          </tr>
+        </thead>
+        <tbody id="clientesBody" class="divide-y divide-gray-200">
+          <tr><td colspan="7" class="text-center py-4 text-gray-500">Cargando datos...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const SHEET_URL = "https://docs.google.com/spreadsheets/d/1126uV8-6yBGhPHsiTXfNtNx9VbiKWQuc/gviz/tq?tqx=out:json&gid=1339672665";
+
+    async function cargarDatos() {
+      const res = await fetch(SHEET_URL);
+      const text = await res.text();
+      const json = JSON.parse(text.substr(47).slice(0, -2));
+      const data = json.table.rows.map(r => r.c.map(c => c ? c.v : ""));
+
+      const tbody = document.getElementById("clientesBody");
+      tbody.innerHTML = "";
+
+      data.forEach(row => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td class="py-2 px-4">${row[0]}</td>
+          <td class="py-2 px-4">${row[1]}</td>
+          <td class="py-2 px-4">${row[2]}</td>
+          <td class="py-2 px-4">${row[3]}</td>
+          <td class="py-2 px-4">${row[4]}</td>
+          <td class="py-2 px-4">${row[5]}</td>
+          <td class="py-2 px-4">${row[6]}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    document.getElementById("searchInput").addEventListener("keyup", function() {
+      const filtro = this.value.toLowerCase();
+      const filas = document.querySelectorAll("#clientesBody tr");
+      filas.forEach(fila => {
+        fila.style.display = fila.textContent.toLowerCase().includes(filtro) ? "" : "none";
+      });
+    });
+
+    cargarDatos();
+  </script>
+</body>
+</html>
