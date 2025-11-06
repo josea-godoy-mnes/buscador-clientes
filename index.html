@@ -4,80 +4,91 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Buscador de Clientes</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
   <style>
     body {
-      background-color: #f9fafb;
+      background-color: #f0f6ff;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
-    .container {
-      max-width: 1100px;
+    /* Animación suave */
+    tr {
+      transition: background-color 0.2s ease;
     }
-    input {
-      border-radius: 10px;
-    }
-    table {
-      border-radius: 10px;
-      overflow: hidden;
+    tr:hover {
+      background-color: #eaf3ff;
     }
   </style>
 </head>
-<body class="p-6">
-  <div class="container mx-auto">
-    <h1 class="text-3xl font-bold text-center mb-6 text-blue-700">📋 Buscador de Clientes</h1>
 
-    <input id="searchInput" type="text" placeholder="Buscar por esquema, cliente, código, categoría, supervisor, vendedor o ruta..."
-      class="w-full p-3 border border-gray-300 mb-4 shadow-sm focus:ring focus:ring-blue-300">
+<body class="p-4">
+  <div class="max-w-5xl mx-auto bg-white rounded-2xl shadow-lg p-6">
+    <h1 class="text-2xl md:text-3xl font-bold text-center text-blue-700 mb-6">
+      🔍 Buscador de Clientes
+    </h1>
 
-    <div class="overflow-x-auto bg-white shadow-md rounded-lg">
-      <table id="clientesTable" class="min-w-full">
-        <thead class="bg-blue-600 text-white">
+    <!-- Campo de búsqueda -->
+    <input
+      type="text"
+      id="search"
+      placeholder="Buscar cliente, código, ruta o vendedor..."
+      class="w-full p-3 mb-5 border border-blue-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+    />
+
+    <!-- Tabla -->
+    <div class="overflow-x-auto">
+      <table class="min-w-full border border-blue-200">
+        <thead class="bg-blue-100 text-blue-900">
           <tr>
-            <th class="py-2 px-4 text-left">Esquema</th>
-            <th class="py-2 px-4 text-left">Cod. Cliente</th>
-            <th class="py-2 px-4 text-left">Cliente</th>
-            <th class="py-2 px-4 text-left">Categoría</th>
-            <th class="py-2 px-4 text-left">Supervisor</th>
-            <th class="py-2 px-4 text-left">Vendedor</th>
-            <th class="py-2 px-4 text-left">Ruta</th>
+            <th class="p-2 border">Esquema</th>
+            <th class="p-2 border">Cod. Cliente</th>
+            <th class="p-2 border">Cliente</th>
+            <th class="p-2 border">Categoría</th>
+            <th class="p-2 border">Supervisor</th>
+            <th class="p-2 border">Vendedor</th>
+            <th class="p-2 border">Ruta</th>
           </tr>
         </thead>
-        <tbody id="clientesBody" class="divide-y divide-gray-200">
-          <tr><td colspan="7" class="text-center py-4 text-gray-500">Cargando datos...</td></tr>
-        </tbody>
+        <tbody id="tabla-datos" class="text-sm md:text-base"></tbody>
       </table>
     </div>
+
+    <p id="status" class="text-center text-gray-500 mt-4">Cargando datos...</p>
   </div>
 
+  <!-- Script para conectar con Google Sheets -->
   <script>
-    const SHEET_URL = "https://docs.google.com/spreadsheets/d/1126uV8-6yBGhPHsiTXfNtNx9VbiKWQuc/gviz/tq?tqx=out:json&gid=1339672665";
+    const url = "https://docs.google.com/spreadsheets/d/1126uV8-6yBGhPHsiTXfNtNx9VbiKWQuc/gviz/tq?tqx=out:json&gid=1339672665";
 
     async function cargarDatos() {
-      const res = await fetch(SHEET_URL);
-      const text = await res.text();
-      const json = JSON.parse(text.substr(47).slice(0, -2));
-      const data = json.table.rows.map(r => r.c.map(c => c ? c.v : ""));
+      try {
+        const res = await fetch(url);
+        const text = await res.text();
+        const json = JSON.parse(text.substring(47).slice(0, -2));
+        const datos = json.table.rows.map(r => r.c.map(c => c ? c.v : ""));
+        mostrarTabla(datos);
+        document.getElementById("status").textContent = "";
+      } catch (error) {
+        document.getElementById("status").textContent = "⚠️ Error al cargar los datos.";
+        console.error(error);
+      }
+    }
 
-      const tbody = document.getElementById("clientesBody");
+    function mostrarTabla(datos) {
+      const tbody = document.getElementById("tabla-datos");
       tbody.innerHTML = "";
-
-      data.forEach(row => {
+      datos.forEach(fila => {
         const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td class="py-2 px-4">${row[0]}</td>
-          <td class="py-2 px-4">${row[1]}</td>
-          <td class="py-2 px-4">${row[2]}</td>
-          <td class="py-2 px-4">${row[3]}</td>
-          <td class="py-2 px-4">${row[4]}</td>
-          <td class="py-2 px-4">${row[5]}</td>
-          <td class="py-2 px-4">${row[6]}</td>
-        `;
+        tr.innerHTML = fila.map(c => `<td class='border p-2'>${c}</td>`).join("");
         tbody.appendChild(tr);
       });
     }
 
-    document.getElementById("searchInput").addEventListener("keyup", function() {
-      const filtro = this.value.toLowerCase();
-      const filas = document.querySelectorAll("#clientesBody tr");
+    document.getElementById("search").addEventListener("input", function(e) {
+      const filtro = e.target.value.toLowerCase();
+      const filas = document.querySelectorAll("#tabla-datos tr");
       filas.forEach(fila => {
         fila.style.display = fila.textContent.toLowerCase().includes(filtro) ? "" : "none";
       });
